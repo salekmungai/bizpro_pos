@@ -1,0 +1,73 @@
+<!-- views/partials/receipt.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+</head>
+<body>
+    
+
+
+<div id="receipt" class="hidden">
+    <div class="bg-white p-6 max-w-sm mx-auto" id="receipt-content">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h2 class="text-xl font-bold">STORE NAME</h2>
+            <p class="text-sm text-gray-600">123 Store Street</p>
+            <p class="text-sm text-gray-600">Phone: (123) 456-7890</p>
+            <div class="border-b-2 border-gray-300 my-2"></div>
+        </div>
+
+        <!-- Receipt Details -->
+        <div class="mb-4">
+            <div class="flex justify-between text-sm">
+                <span>Receipt #:</span>
+                <span id="receipt-number"></span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Date:</span>
+                <span id="receipt-date"></span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Payment Method:</span>
+                <span id="receipt-payment-method"></span>
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="mb-4">
+            <div class="border-b border-gray-300 pb-2 mb-2">
+                <div class="grid grid-cols-12 text-sm font-semibold">
+                    <div class="col-span-6">Item</div>
+                    <div class="col-span-2 text-center">Qty</div>
+                    <div class="col-span-2 text-right">Price</div>
+                    <div class="col-span-2 text-right">Total</div>
+                </div>
+            </div>
+            <div id="receipt-items" class="space-y-2"></div>
+        </div>
+
+        <!-- Totals -->
+        <div class="border-t border-gray-300 pt-2">
+            <div class="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span id="receipt-subtotal"></span>
+            </div>
+            <div class="flex justify-between text-sm font-bold mt-2">
+                <span>Total:</span>
+                <span id="receipt-total"></span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-6">
+            <p class="text-sm">Thank you for your business!</p>
+            <p class="text-xs text-gray-600 mt-2">Keep this receipt for your records</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

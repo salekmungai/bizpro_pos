@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <!-- <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet"> -->
+    
+
+    <link href="/css/styles.css" rel="stylesheet"> <!-- Link to your custom styles -->
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+
+    <!-- Login Container -->
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-6">
+            <img src="/images/logo2-cropped.svg" alt="Logo" class="h-40 w-auto">
+        </div>
+
+        <!-- Login Form -->
+        <form action="/auth/login" method="POST" class="space-y-4">
+
+            <!-- Username -->
+            <div class="form-group">
+                <label for="username" class="block text-sm font-large text-blue-900">Username</label>
+                <input type="text" id="username" name="username" required
+                    class="form-control mt-1 block w-full px-4 py-2 border border-orange-200 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password" class="block text-sm font-large text-blue-900">Password</label>
+                <input type="password" id="password" name="password" required
+                    class="form-control block w-full px-4 py-2 border border-orange-200 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Login Button -->
+            <div>
+                <button type="submit"
+                    class="w-full py-2 px-4 bg-blue-900 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Login
+                </button>
+            </div>
+
+
+            <!-- Register Link -->
+            <div class="form-group text-center">
+                <p class="text-sm text-blue-900">Don't have an account? 
+                    <a href="/register" class="text-blue-500 hover:text-blue-700">Register here</a>
+                </p>
+            </div>
+
+            <!-- Forgot Password (Optional)
+            <div class="text-center">
+                <a href="#" class="text-sm text-blue-500 hover:text-blue-700">Forgot password?</a>
+            </div>-->
+
+        </form>
+
+    </div>
+
+</body>
+</html>

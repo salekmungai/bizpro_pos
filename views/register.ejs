@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+
+    <!-- Register Container -->
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-5">
+            <img src="/images/logo2-cropped.svg" alt="Logo" class="h-40 w-auto">
+        </div>
+
+        <!-- Register Form -->
+        <form action="/auth/register" method="POST" class="space-y-4">
+
+            <!-- Flash Messages (optional, can be dynamically rendered) -->
+            <div class="mb-4">
+                <!-- Example: <p class="text-red-500 text-sm">Error message here</p> -->
+            </div>
+
+
+            <!-- Username -->
+            <div class="form-group">
+                <label for="username" class="block text-sm font-medium text-blue-900">Username</label>
+                <input type="text" id="username" name="username" required
+                    class="form-control mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Full Name -->
+            <div class="form-group">
+                <label for="name" class="block text-sm font-medium text-blue-900">Full Name</label>
+                <input type="text" id="name" name="name" required
+                    class="form-control mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+            <!-- Role Selection -->
+            <div class="form-group">
+                <label for="role" class="block text-sm font-medium text-blue-900">
+                    Role
+                </label>
+                <select id="role" name="role" required
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-black-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password" class="block text-sm font-medium text-blue-900">Password</label>
+                <input type="password" id="password" name="password" required
+                    class="form-control mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group">
+                <label for="confirm-password" class="block text-sm font-medium text-blue-900">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm_password" required
+                    class="form-control mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <!-- Register Button -->
+            <div class="form-group">
+                <button type="submit"
+                    class="w-full py-2 px-4 bg-blue-900 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Register
+                </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="form-group text-center">
+                <p class="text-sm text-blue-900">Already have an account? 
+                    <a href="/login" class="text-blue-500 hover:text-blue-700">Login here</a>
+                </p>
+            </div>
+
+        </form>
+
+    </div>
+
+</body>
+</html>
