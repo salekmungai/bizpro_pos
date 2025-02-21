@@ -158,21 +158,22 @@
 
         // Update calculations
         function updateCalculations() {
-            let total = 0;
-            document.querySelectorAll('.product-entry').forEach(entry => {
-                const quantity = parseFloat(entry.querySelector('.quantity-input').value) || 0;
-                const unitPrice = parseFloat(entry.querySelector('.unit-price').value) || 0;
-                const subtotal = quantity * unitPrice;
-                
-                const subtotalInput = entry.querySelector('.subtotal');
-                subtotalInput.value = formatCurrency(subtotal);
-                
-                total += subtotal;
-            });
+    let total = 0;
+    document.querySelectorAll('.product-entry').forEach(entry => {
+        const quantity = parseFloat(entry.querySelector('.quantity-input').value) || 0;
+        const unitPrice = parseFloat(entry.querySelector('.unit-price').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const subtotal = quantity * unitPrice;
+        
+        const subtotalInput = entry.querySelector('.subtotal');
+        subtotalInput.value = formatCurrency(subtotal);
+        
+        total += subtotal;
+    });
+    
+    document.getElementById('totalAmount').value = formatCurrency(total);
+}
             
-            const totalInput = document.getElementById('totalAmount');
-            totalInput.value = formatCurrency(total);
-        }
+ 
 
         // Debounce function
         const debounce = (func, delay) => {
@@ -186,6 +187,13 @@
         // Product search handler
         const handleProductSearch = (() => {
     let currentSearchController = null;
+
+    const calculateSubtotal = (entry) => {
+        const quantity = parseFloat(entry.querySelector('.quantity-input').value) || 0;
+        const unitPrice = parseFloat(entry.querySelector('.unit-price').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const subtotal = quantity * unitPrice;
+        entry.querySelector('.subtotal').value = formatCurrency(subtotal);
+    };
 
     return async (input, resultsContainer, productIdInput) => {
         const searchTerm = input.value.trim();
@@ -217,21 +225,31 @@
 
         try {
             const response = await fetch(
-                `/sales/search?q=${encodeURIComponent(searchTerm)}`, 
-                { signal: currentSearchController.signal }
+                `/sales/new/search?q=${encodeURIComponent(searchTerm)}`, 
+                { 
+                    signal: currentSearchController.signal,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
             );
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
 
             if (!data.success) {
-                throw new Error(data.message);
+                throw new Error(data.message || 'Search failed');
             }
 
-            resultsContainer.innerHTML = '';
             if (!data.products || data.products.length === 0) {
                 resultsContainer.innerHTML = '<div class="p-2 text-gray-500 text-sm">No products found</div>';
                 return;
             }
 
+            resultsContainer.innerHTML = '';
             data.products.forEach(product => {
                 const div = document.createElement('div');
                 div.className = 'p-2 hover:bg-gray-50 cursor-pointer text-sm flex items-center justify-between';
@@ -249,11 +267,38 @@
                 div.addEventListener('click', () => {
                     input.value = product.product_name;
                     productIdInput.value = product.product_id;
+                    
                     const entry = input.closest('.product-entry');
-                    entry.querySelector('.unit-price').value = formatCurrency(product.unit_price);
-                    entry.querySelector('.stock-message').textContent = 
-                        `${product.quantity_in_stock} units in stock`;
-                    entry.querySelector('.quantity-input').max = product.quantity_in_stock;
+                    const unitPriceInput = entry.querySelector('.unit-price');
+                    const quantityInput = entry.querySelector('.quantity-input');
+                    const stockMessage = entry.querySelector('.stock-message');
+                    
+                    // Update form fields with proper currency formatting
+                    unitPriceInput.value = formatCurrency(product.unit_price);
+                    stockMessage.textContent = `${product.quantity_in_stock} units in stock`;
+                    quantityInput.max = product.quantity_in_stock;
+                    
+                    // Clear quantity and set to 1 by default
+                    quantityInput.value = 1;
+                    
+                    // Calculate initial subtotal
+                    calculateSubtotal(entry);
+                    
+                    // Add quantity change listener
+                    quantityInput.addEventListener('input', () => {
+                        const value = parseInt(quantityInput.value) || 0;
+                        const max = parseInt(quantityInput.max) || 0;
+                        
+                        if (value > max) {
+                            quantityInput.value = max;
+                            showToast('Quantity exceeds available stock', 'warning');
+                        } else if (value < 0) {
+                            quantityInput.value = 0;
+                        }
+                        
+                        calculateSubtotal(entry);
+                        updateCalculations();
+                    });
                     
                     // Add selection animation
                     div.classList.add('bg-indigo-50');
@@ -276,7 +321,7 @@
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>Error searching products</span>
+                    <span>${error.message || 'Error searching products'}</span>
                 </div>
             `;
         }
@@ -383,7 +428,7 @@
             }
 
             try {
-                const response = await fetch('/sales', {
+                const response = await fetch('/sales/new', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -392,7 +437,7 @@
                         products,
                         quantities,
                         payment_method: form.querySelector('[name="payment_method"]').value,
-                        total_amount: parseFloat(document.getElementById('totalAmount').value.replace(/[^0-9.]/g, ''))
+                        total_amount: parseFloat(document.getElementById('totalAmount').value.replace(/[^\d.]/g, ''))
                     })
                 });
 

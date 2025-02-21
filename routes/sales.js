@@ -61,29 +61,33 @@ router.post('/', async (req, res) => {
     const connection = await db.getConnection();
     
     try {
+        console.log("Received Sale Request:", req.body); // Log request data
         await connection.beginTransaction();
         
-        const { 
-            products, // Array of product IDs
-            quantities, // Array of quantities
-            payment_method,
-            total_amount
-        } = req.body;
+        const { products, quantities, payment_method, total_amount } = req.body;
 
-        // Insert main sale record
+        if (!products || !quantities || !payment_method || !total_amount) {
+            throw new Error("Missing required fields");
+        }
+
+        console.log("Products:", products, "Quantities:", quantities, "Payment Method:", payment_method, "Total:", total_amount);
+
+        // Insert sale record
         const [saleResult] = await connection.query(
             'INSERT INTO sales (total_amount, payment_method, created_at) VALUES (?, ?, NOW())',
             [total_amount, payment_method]
         );
-        
-        const saleId = saleResult.insertId;
 
-        // Process each product in the sale
+        const saleId = saleResult.insertId;
+        console.log("Sale ID:", saleId);
+
         for (let i = 0; i < products.length; i++) {
             const productId = products[i];
             const quantity = quantities[i];
 
-            // Get product details
+            console.log(`Processing Product ID: ${productId}, Quantity: ${quantity}`);
+
+            // Fetch product details
             const [productRows] = await connection.query(
                 'SELECT unit_price, quantity_in_stock FROM products WHERE product_id = ?',
                 [productId]
@@ -94,19 +98,19 @@ router.post('/', async (req, res) => {
             }
 
             const product = productRows[0];
+            console.log("Product Details:", product);
 
-            // Check stock availability
             if (product.quantity_in_stock < quantity) {
                 throw new Error(`Insufficient stock for product ${productId}`);
             }
 
-            // Insert sale detail
+            // Insert into sale_details table
             await connection.query(
                 'INSERT INTO sale_details (sale_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)',
                 [saleId, productId, quantity, product.unit_price]
             );
 
-            // Update product stock
+            // Update stock
             await connection.query(
                 'UPDATE products SET quantity_in_stock = quantity_in_stock - ? WHERE product_id = ?',
                 [quantity, productId]
@@ -114,19 +118,13 @@ router.post('/', async (req, res) => {
         }
 
         await connection.commit();
-        res.json({ 
-            success: true, 
-            message: 'Sale recorded successfully',
-            saleId: saleId
-        });
+        res.json({ success: true, message: 'Sale recorded successfully', saleId });
 
     } catch (error) {
         await connection.rollback();
-        console.error('Error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: error.message || 'Error processing sale'
-        });
+        console.error('Sale processing error:', error.message);
+        res.status(500).json({ success: false, message: error.message || 'Error processing sale' });
+
     } finally {
         connection.release();
     }
