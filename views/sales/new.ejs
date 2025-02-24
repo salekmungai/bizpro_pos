@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Sale</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+    body * {
+        visibility: hidden;
+    }
+    #receiptContent, #receiptContent * {
+        visibility: visible;
+    }
+    #receiptContent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    #closeReceiptModal, #printReceipt {
+        display: none;
+    }
+}
+    </style>
 </head>
 <body class="bg-gray-50">
     <!-- Navbar -->
@@ -34,6 +53,7 @@
                 <span class="text-sm text-gray-500"><%= new Date().toLocaleString() %></span>
             </div>
 
+            <!-- Sale Form -->
             <form id="saleForm" class="space-y-6">
                 <!-- Products List -->
                 <div id="productEntries" class="space-y-4">
@@ -138,337 +158,441 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('saleForm');
-        const productEntries = document.getElementById('productEntries');
-        const addProductBtn = document.getElementById('addProduct');
-        const successModal = document.getElementById('successModal');
-        const closeModal = document.getElementById('closeModal');
-
-        // Format currency
-        const formatCurrency = (number) => {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'KES'
-            }).format(number);
-        };
-
-        // Update calculations
-        function updateCalculations() {
-    let total = 0;
-    document.querySelectorAll('.product-entry').forEach(entry => {
-        const quantity = parseFloat(entry.querySelector('.quantity-input').value) || 0;
-        const unitPrice = parseFloat(entry.querySelector('.unit-price').value.replace(/[^0-9.-]+/g, '')) || 0;
-        const subtotal = quantity * unitPrice;
-        
-        const subtotalInput = entry.querySelector('.subtotal');
-        subtotalInput.value = formatCurrency(subtotal);
-        
-        total += subtotal;
-    });
-    
-    document.getElementById('totalAmount').value = formatCurrency(total);
-}
-            
- 
-
-        // Debounce function
-        const debounce = (func, delay) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), delay);
-            };
-        };
-
-        // Product search handler
-        const handleProductSearch = (() => {
-    let currentSearchController = null;
-
-    const calculateSubtotal = (entry) => {
-        const quantity = parseFloat(entry.querySelector('.quantity-input').value) || 0;
-        const unitPrice = parseFloat(entry.querySelector('.unit-price').value.replace(/[^0-9.-]+/g, '')) || 0;
-        const subtotal = quantity * unitPrice;
-        entry.querySelector('.subtotal').value = formatCurrency(subtotal);
-    };
-
-    return async (input, resultsContainer, productIdInput) => {
-        const searchTerm = input.value.trim();
-        
-        // Clear previous search
-        if (currentSearchController) {
-            currentSearchController.abort();
-        }
-        currentSearchController = new AbortController();
-
-        // Hide results if search term is too short
-        if (!searchTerm || searchTerm.length < 2) {
-            resultsContainer.innerHTML = '<div class="p-2 text-gray-500 text-sm">Type at least 2 characters to search</div>';
-            resultsContainer.classList.remove('hidden');
-            return;
-        }
-
-        // Show loading state
-        resultsContainer.innerHTML = `
-            <div class="p-2 text-gray-500 text-sm flex items-center space-x-2">
-                <svg class="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Searching...</span>
-            </div>
-        `;
-        resultsContainer.classList.remove('hidden');
-
-        try {
-            const response = await fetch(
-                `/sales/new/search?q=${encodeURIComponent(searchTerm)}`, 
-                { 
-                    signal: currentSearchController.signal,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                }
-            );
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Search failed');
-            }
-
-            if (!data.products || data.products.length === 0) {
-                resultsContainer.innerHTML = '<div class="p-2 text-gray-500 text-sm">No products found</div>';
-                return;
-            }
-
-            resultsContainer.innerHTML = '';
-            data.products.forEach(product => {
-                const div = document.createElement('div');
-                div.className = 'p-2 hover:bg-gray-50 cursor-pointer text-sm flex items-center justify-between';
-                div.innerHTML = `
-                    <div>
-                        <div class="font-medium">${product.product_name}</div>
-                        <div class="text-xs text-gray-500">ID: ${product.product_id}</div>
+        <!-- Receipt Modal -->
+        <div id="receiptModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 transform transition-all">
+                <div class="p-6">
+                    <h3 class="text-center text-lg font-medium text-gray-900">Receipt</h3>
+                    <div id="receiptContent" class="mt-4 text-sm text-gray-700">
+                        <!-- Receipt content will be inserted here -->
                     </div>
-                    <div class="text-right">
-                        <div class="font-medium text-gray-900">${formatCurrency(product.unit_price)}</div>
-                        <div class="text-xs text-gray-500">Stock: ${product.quantity_in_stock}</div>
-                    </div>
-                `;
-
-                div.addEventListener('click', () => {
-                    input.value = product.product_name;
-                    productIdInput.value = product.product_id;
-                    
-                    const entry = input.closest('.product-entry');
-                    const unitPriceInput = entry.querySelector('.unit-price');
-                    const quantityInput = entry.querySelector('.quantity-input');
-                    const stockMessage = entry.querySelector('.stock-message');
-                    
-                    // Update form fields with proper currency formatting
-                    unitPriceInput.value = formatCurrency(product.unit_price);
-                    stockMessage.textContent = `${product.quantity_in_stock} units in stock`;
-                    quantityInput.max = product.quantity_in_stock;
-                    
-                    // Clear quantity and set to 1 by default
-                    quantityInput.value = 1;
-                    
-                    // Calculate initial subtotal
-                    calculateSubtotal(entry);
-                    
-                    // Add quantity change listener
-                    quantityInput.addEventListener('input', () => {
-                        const value = parseInt(quantityInput.value) || 0;
-                        const max = parseInt(quantityInput.max) || 0;
-                        
-                        if (value > max) {
-                            quantityInput.value = max;
-                            showToast('Quantity exceeds available stock', 'warning');
-                        } else if (value < 0) {
-                            quantityInput.value = 0;
-                        }
-                        
-                        calculateSubtotal(entry);
-                        updateCalculations();
-                    });
-                    
-                    // Add selection animation
-                    div.classList.add('bg-indigo-50');
-                    setTimeout(() => {
-                        resultsContainer.classList.add('hidden');
-                        updateCalculations();
-                    }, 150);
-                });
-
-                resultsContainer.appendChild(div);
-            });
-
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                return; // Search was cancelled
-            }
-            console.error('Search error:', error);
-            resultsContainer.innerHTML = `
-                <div class="p-2 text-red-500 text-sm flex items-center space-x-2">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>${error.message || 'Error searching products'}</span>
+                    <button id="closeReceiptModal" 
+                            class="mt-6 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                        Close
+                    </button>
+                    <button id="printReceipt" 
+                            class="mt-4 w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                        Print Receipt
+                    </button>
                 </div>
-            `;
-        }
-    };
-})();
+            </div>
+        </div>
 
-        // Add product entry
-        addProductBtn.addEventListener('click', () => {
-            const newEntry = productEntries.firstElementChild.cloneNode(true);
-            newEntry.querySelectorAll('input').forEach(input => {
-                if (input.type !== 'hidden') input.value = '';
-            });
-            newEntry.querySelector('.stock-message').textContent = '';
-            
-            // Animation
-            newEntry.style.opacity = '0';
-            productEntries.appendChild(newEntry);
-            setTimeout(() => newEntry.style.opacity = '1', 10);
-            
-            attachSearchListeners(newEntry);
-            attachEventListeners(newEntry);
-        });
-
-        // Attach search listeners
-        function attachSearchListeners(entry) {
-            const searchInput = entry.querySelector('.product-search');
-            const resultsContainer = entry.querySelector('.search-results');
-            const productIdInput = entry.querySelector('.product-id');
-
-            searchInput.addEventListener('input', debounce(() => 
-                handleProductSearch(searchInput, resultsContainer, productIdInput), 300));
-
-            document.addEventListener('click', (e) => {
-                if (!entry.contains(e.target)) {
-                    resultsContainer.classList.add('hidden');
-                }
-            });
-        }
-
-        // Attach event listeners
-        function attachEventListeners(entry) {
-            const quantityInput = entry.querySelector('.quantity-input');
-            const removeBtn = entry.querySelector('.remove-product');
-
-            quantityInput.addEventListener('input', function() {
-                const stock = parseInt(this.max) || 0;
-                const value = parseInt(this.value) || 0;
+        <!-- Hidden Receipt Template -->
+        <div id="receiptTemplate" class="hidden">
+            <div class="text-center">
+                <h2 class="text-xl font-bold">Your Business Name</h2>
+                <p>Your Business Address</p>
+                <p>Your Business Phone Number</p>
+                <p>Your Business Email</p>
+                <hr class="my-2">
+            </div>
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th class="text-left">Description</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-center">Unit Price</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="receiptItems">
+                    <!-- Items will be dynamically inserted here -->
+                </tbody>
+            </table>
+            <hr class="my-2">
+            <div class="flex justify-between">
+                <span>Subtotal:</span>
+                <span id="receiptSubtotal"></span>
+            </div>
+            <div class="flex justify-between">
+                <span>Grand Total:</span>
+                <span id="receiptGrandTotal"></span>
+            </div>
+            <hr class="my-2">
+            <div>
+                <p><strong>Payment Method:</strong> <span id="receiptPaymentMethod"></span></p>
+                <p><strong>You were served by:</strong> <span id="receiptEmployee"></span></p>
+            </div>
+            <hr class="my-2">
+            <div class="text-center">
+                <p>Welcome! Thank you for your purchase.</p>
+                <p>No return policy: The goods once sold are not returnable.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('saleForm');
+            const productEntries = document.getElementById('productEntries');
+            const addProductBtn = document.getElementById('addProduct');
+            const successModal = document.getElementById('successModal');
+            const closeModal = document.getElementById('closeModal');
+            const receiptModal = document.getElementById('receiptModal');
+            const receiptContent = document.getElementById('receiptContent');
+            const closeReceiptModal = document.getElementById('closeReceiptModal');
+            const printReceipt = document.getElementById('printReceipt');
+        
+            // Format currency
+            const formatCurrency = (number) => {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'KES'
+                }).format(number);
+            };
+        
+            // Update calculations
+            function updateCalculations() {
+                let total = 0;
+                document.querySelectorAll('.product-entry').forEach(entry => {
+                    const quantity = parseFloat(entry.querySelector('.quantity-input').value) || 0;
+                    const unitPrice = parseFloat(entry.querySelector('.unit-price').value.replace(/[^0-9.-]+/g, '')) || 0;
+                    const subtotal = quantity * unitPrice;
+                    
+                    const subtotalInput = entry.querySelector('.subtotal');
+                    subtotalInput.value = formatCurrency(subtotal);
+                    
+                    total += subtotal;
+                });
                 
-                if (value > stock) {
-                    this.value = stock;
-                    showToast('Quantity exceeds available stock', 'red');
-                }
-                updateCalculations();
-            });
-
-            removeBtn.addEventListener('click', function() {
-                if (productEntries.children.length > 1) {
-                    entry.style.opacity = '0';
-                    setTimeout(() => {
-                        entry.remove();
-                        updateCalculations();
-                    }, 300);
-                }
-            });
-        }
-
-        // Show toast notification
-        function showToast(message, color = 'indigo') {
-            const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 p-3 rounded-md text-white bg-${color}-500 shadow-lg transition-transform transform translate-x-0`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.transform = 'translateX(150%)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // Form submission
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const products = [];
-            const quantities = [];
-            let isValid = true;
-
-            document.querySelectorAll('.product-entry').forEach(entry => {
-                const productId = entry.querySelector('.product-id').value;
-                const quantity = entry.querySelector('.quantity-input').value;
-
-                if (!productId || !quantity) {
-                    isValid = false;
+                document.getElementById('totalAmount').value = formatCurrency(total);
+            }
+        
+            // Debounce function
+            const debounce = (func, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            };
+        
+            // Product search handler
+            const handleProductSearch = async (input, resultsContainer, productIdInput) => {
+                const searchTerm = input.value.trim();
+                
+                if (!searchTerm || searchTerm.length < 2) {
+                    resultsContainer.innerHTML = '<div class="p-2 text-gray-500 text-sm">Type at least 2 characters to search</div>';
+                    resultsContainer.classList.remove('hidden');
                     return;
                 }
-
-                products.push(productId);
-                quantities.push(quantity);
-            });
-
-            if (!isValid) {
-                showToast('Please fill in all required fields', 'yellow');
-                return;
-            }
-
-            try {
-                const response = await fetch('/sales/new', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        products,
-                        quantities,
-                        payment_method: form.querySelector('[name="payment_method"]').value,
-                        total_amount: parseFloat(document.getElementById('totalAmount').value.replace(/[^\d.]/g, ''))
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById('modalSaleId').textContent = `Sale #${result.saleId}`;
-                    successModal.classList.remove('hidden');
-                    successModal.classList.add('animate-fade-in');
-                } else {
-                    showToast(result.message || 'Error processing sale', 'red');
+        
+                // Show loading state
+                resultsContainer.innerHTML = `
+                    <div class="p-2 text-gray-500 text-sm flex items-center space-x-2">
+                        <svg class="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Searching...</span>
+                    </div>
+                `;
+                resultsContainer.classList.remove('hidden');
+        
+                try {
+                    const response = await fetch(`/sales/new/search?q=${encodeURIComponent(searchTerm)}`);
+                    const data = await response.json();
+        
+                    if (!data.success) {
+                        throw new Error(data.message || 'Search failed');
+                    }
+        
+                    if (!data.products || data.products.length === 0) {
+                        resultsContainer.innerHTML = '<div class="p-2 text-gray-500 text-sm">No products found</div>';
+                        return;
+                    }
+        
+                    resultsContainer.innerHTML = '';
+                    data.products.forEach(product => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-50 cursor-pointer text-sm flex items-center justify-between';
+                        div.innerHTML = `
+                            <div>
+                                <div class="font-medium">${product.product_name}</div>
+                                <div class="text-xs text-gray-500">ID: ${product.product_id}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium text-gray-900">${formatCurrency(product.unit_price)}</div>
+                                <div class="text-xs text-gray-500">Stock: ${product.quantity_in_stock}</div>
+                            </div>
+                        `;
+        
+                        div.addEventListener('click', () => {
+                            input.value = product.product_name;
+                            productIdInput.value = product.product_id;
+                            
+                            const entry = input.closest('.product-entry');
+                            const unitPriceInput = entry.querySelector('.unit-price');
+                            const quantityInput = entry.querySelector('.quantity-input');
+                            const stockMessage = entry.querySelector('.stock-message');
+                            
+                            unitPriceInput.value = formatCurrency(product.unit_price);
+                            stockMessage.textContent = `${product.quantity_in_stock} units in stock`;
+                            quantityInput.max = product.quantity_in_stock;
+                            quantityInput.value = 1;
+                            
+                            updateCalculations();
+                            
+                            quantityInput.addEventListener('input', () => {
+                                const value = parseInt(quantityInput.value) || 0;
+                                const max = parseInt(quantityInput.max) || 0;
+                                
+                                if (value > max) {
+                                    quantityInput.value = max;
+                                    showToast('Quantity exceeds available stock', 'warning');
+                                } else if (value < 0) {
+                                    quantityInput.value = 0;
+                                }
+                                
+                                updateCalculations();
+                            });
+                            
+                            resultsContainer.classList.add('hidden');
+                        });
+        
+                        resultsContainer.appendChild(div);
+                    });
+        
+                } catch (error) {
+                    console.error('Search error:', error);
+                    resultsContainer.innerHTML = `
+                        <div class="p-2 text-red-500 text-sm flex items-center space-x-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>${error.message || 'Error searching products'}</span>
+                        </div>
+                    `;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Error processing sale', 'red');
+            };
+        
+            // Add product entry
+            addProductBtn.addEventListener('click', () => {
+                const newEntry = productEntries.firstElementChild.cloneNode(true);
+                newEntry.querySelectorAll('input').forEach(input => {
+                    if (input.type !== 'hidden') input.value = '';
+                });
+                newEntry.querySelector('.stock-message').textContent = '';
+                
+                newEntry.style.opacity = '0';
+                productEntries.appendChild(newEntry);
+                setTimeout(() => newEntry.style.opacity = '1', 10);
+                
+                attachSearchListeners(newEntry);
+                attachEventListeners(newEntry);
+            });
+        
+            // Attach search listeners
+            function attachSearchListeners(entry) {
+                const searchInput = entry.querySelector('.product-search');
+                const resultsContainer = entry.querySelector('.search-results');
+                const productIdInput = entry.querySelector('.product-id');
+        
+                searchInput.addEventListener('input', debounce(() => 
+                    handleProductSearch(searchInput, resultsContainer, productIdInput), 300));
+        
+                document.addEventListener('click', (e) => {
+                    if (!entry.contains(e.target)) {
+                        resultsContainer.classList.add('hidden');
+                    }
+                });
             }
-        });
+        
+            // Attach event listeners
+            function attachEventListeners(entry) {
+                const quantityInput = entry.querySelector('.quantity-input');
+                const removeBtn = entry.querySelector('.remove-product');
+        
+                quantityInput.addEventListener('input', function() {
+                    const stock = parseInt(this.max) || 0;
+                    const value = parseInt(this.value) || 0;
+                    
+                    if (value > stock) {
+                        this.value = stock;
+                        showToast('Quantity exceeds available stock', 'red');
+                    }
+                    updateCalculations();
+                });
+        
+                removeBtn.addEventListener('click', function() {
+                    if (productEntries.children.length > 1) {
+                        entry.classList.add('opacity-0');
+                        entry.style.transition = 'opacity 300ms ease-out';
+                        
+                        setTimeout(() => {
+                            entry.remove();
+                            updateCalculations();
+                        }, 300);
+                    } else {
+                        entry.querySelectorAll('input').forEach(input => {
+                            if (input.type !== 'hidden') input.value = '';
+                        });
+                        entry.querySelector('.stock-message').textContent = '';
+                        entry.querySelector('.product-id').value = '';
+                        entry.querySelector('.unit-price').value = '';
+                        entry.querySelector('.subtotal').value = '';
+                        updateCalculations();
+                    }
+                });
+            }
+        
+            // Show toast notification
+            function showToast(message, color = 'indigo') {
+                const toast = document.createElement('div');
+                toast.className = `fixed top-4 right-4 p-3 rounded-md text-white bg-${color}-500 shadow-lg transition-transform transform translate-x-0`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(150%)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+        
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+        
+                const products = [];
+                const quantities = [];
+                let isValid = true;
+        
+                document.querySelectorAll('.product-entry').forEach(entry => {
+                    const productId = entry.querySelector('.product-id').value;
+                    const quantity = entry.querySelector('.quantity-input').value;
+        
+                    if (!productId || !quantity) {
+                        isValid = false;
+                        return;
+                    }
+        
+                    products.push(productId);
+                    quantities.push(quantity);
+                });
+        
+                if (!isValid) {
+                    showToast('Please fill in all required fields', 'yellow');
+                    return;
+                }
+        
+                try {
+                    const response = await fetch('/sales/new', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            products,
+                            quantities,
+                            payment_method: form.querySelector('[name="payment_method"]').value,
+                            total_amount: parseFloat(document.getElementById('totalAmount').value.replace(/[^\d.]/g, ''))
+                        })
+                    });
+        
+                    const result = await response.json();
+        
+                    if (result.success) {
+                        document.getElementById('modalSaleId').textContent = `Sale #${result.saleId}`;
+                        successModal.classList.remove('hidden');
+                        successModal.classList.add('animate-fade-in');
+        
+                        // Show receipt after successful sale
+                        showReceipt(result.saleId);
+                    } else {
+                        showToast(result.message || 'Error processing sale', 'red');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error processing sale', 'red');
+                }
+            });
+        
+            // Close modal
+            closeModal.addEventListener('click', function() {
+                successModal.classList.add('animate-fade-out');
+                setTimeout(() => {
+                    successModal.classList.add('hidden');
+                    window.location.reload();
+                }, 200);
+            });
+        
+            // Show receipt
+            async function showReceipt(saleId) {
+    try {
+        const response = await fetch(`/sales/new/${saleId}/receipt`);
+        const data = await response.json();
 
-        // Close modal
-        closeModal.addEventListener('click', function() {
-            successModal.classList.add('animate-fade-out');
-            setTimeout(() => {
-                successModal.classList.add('hidden');
-                window.location.reload();
-            }, 200);
-        });
+        if (data.success) {
+            const receipt = data.receipt;
+            const receiptTemplate = document.getElementById('receiptTemplate').cloneNode(true);
+            receiptTemplate.id = 'activeReceipt';
+            receiptTemplate.classList.remove('hidden');
 
-        // Initialize first entry
-        attachSearchListeners(productEntries.querySelector('.product-entry'));
-        attachEventListeners(productEntries.querySelector('.product-entry'));
-    });
-    </script>
+            // Populate receipt items in the cloned template
+            const receiptItems = receiptTemplate.querySelector('#receiptItems');
+            receiptItems.innerHTML = receipt.items.map(item => `
+                <tr>
+                    <td class="text-left">${item.productName}</td>
+                    <td class="text-center">${item.quantity}</td>
+                    <td class="text-center">${formatCurrency(item.unitPrice)}</td>
+                    <td class="text-right">${formatCurrency(item.subtotal)}</td>
+                </tr>
+            `).join('');
+
+            // Populate totals in the cloned template
+            receiptTemplate.querySelector('#receiptSubtotal').textContent = formatCurrency(receipt.totalAmount);
+            receiptTemplate.querySelector('#receiptGrandTotal').textContent = formatCurrency(receipt.totalAmount);
+            
+            // Populate payment method
+            receiptTemplate.querySelector('#receiptPaymentMethod').textContent = receipt.paymentMethod;
+            
+            // Populate employee name (you can fetch this from your backend or session)
+            receiptTemplate.querySelector('#receiptEmployee').textContent = 'Employee Name'; // Replace with actual employee name
+
+            // Clear existing content and add the populated template
+            receiptContent.innerHTML = '';
+            receiptContent.appendChild(receiptTemplate);
+
+            // Show receipt modal
+            receiptModal.classList.remove('hidden');
+        } else {
+            showToast('Error fetching receipt', 'red');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error fetching receipt', 'red');
+    }
+}
+        
+            // Close receipt modal
+            closeReceiptModal.addEventListener('click', function() {
+                receiptModal.classList.add('hidden');
+            });
+        
+            // Print receipt
+printReceipt.addEventListener('click', function() {
+    // Prevent multiple print dialogs
+    const isPrinting = printReceipt.getAttribute('data-printing');
+    if (isPrinting === 'true') return;
+    
+    // Set flag to prevent multiple clicks
+    printReceipt.setAttribute('data-printing', 'true');
+    
+    // Print
+    window.print();
+    
+    // Reset flag after printing
+    setTimeout(() => {
+        printReceipt.setAttribute('data-printing', 'false');
+    }, 2000);
+});
+        
+            // Initialize first entry
+            attachSearchListeners(productEntries.querySelector('.product-entry'));
+            attachEventListeners(productEntries.querySelector('.product-entry'));
+        });
+        </script>
 </body>
 </html>

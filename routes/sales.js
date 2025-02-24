@@ -154,6 +154,47 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Generate receipt data
+router.get('/:id/receipt', async (req, res) => {
+    try {
+        const [saleDetails] = await db.query(`
+            SELECT 
+                s.sale_id, 
+                s.total_amount, 
+                s.payment_method, 
+                s.created_at,
+                sd.product_id, 
+                sd.quantity, 
+                sd.unit_price,
+                p.product_name
+            FROM sales s
+            JOIN sale_details sd ON s.sale_id = sd.sale_id
+            JOIN products p ON sd.product_id = p.product_id
+            WHERE s.sale_id = ?
+        `, [req.params.id]);
 
+        if (saleDetails.length === 0) {
+            return res.status(404).json({ success: false, message: 'Sale not found' });
+        }
+
+        const receipt = {
+            saleId: saleDetails[0].sale_id,
+            totalAmount: saleDetails[0].total_amount,
+            paymentMethod: saleDetails[0].payment_method,
+            createdAt: saleDetails[0].created_at,
+            items: saleDetails.map(item => ({
+                productName: item.product_name,
+                quantity: item.quantity,
+                unitPrice: item.unit_price,
+                subtotal: item.quantity * item.unit_price
+            }))
+        };
+
+        res.json({ success: true, receipt });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ success: false, message: 'Error generating receipt' });
+    }
+});
 
 module.exports = router;
