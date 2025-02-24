@@ -18,6 +18,18 @@
         left: 0;
         top: 0;
         width: 100%;
+        max-width: 100%;
+        padding: 20px;
+    }
+    #receiptContent table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+    #receiptContent table th,
+    #receiptContent table td {
+        padding: 5px;
+        text-align: left;
     }
     #closeReceiptModal, #printReceipt {
         display: none;
@@ -49,19 +61,19 @@
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="flex items-center justify-between mb-8">
-                <h1 class="text-2xl font-medium text-gray-900">New Sale</h1>
-                <span class="text-sm text-gray-500"><%= new Date().toLocaleString() %></span>
+                <h1 class="text-2xl font-medium text-[#123d94]">New Sale</h1>
+                <span class="text-sm text-[#123d94]"><%= new Date().toLocaleString() %></span>
             </div>
 
             <!-- Sale Form -->
             <form id="saleForm" class="space-y-6">
                 <!-- Products List -->
                 <div id="productEntries" class="space-y-4">
-                    <div class="product-entry bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="product-entry bg-white rounded-lg border border-gray-300 shadow-sm">
                         <div class="p-4 grid grid-cols-12 gap-4 items-center">
                             <div class="col-span-5 relative">
                                 <input type="text" 
-                                       class="product-search w-full bg-gray-50 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" 
+                                       class="product-search w-full bg-blue-50 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" 
                                        placeholder="Search product by ID or name"
                                        autocomplete="off">
                                 <input type="hidden" class="product-id">
@@ -70,24 +82,24 @@
                             <div class="col-span-2">
                                 <input type="number" 
                                        placeholder="Qty"
-                                       class="quantity-input w-full bg-gray-50 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 text-center" 
+                                       class="quantity-input w-full bg-blue-50 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 text-center" 
                                        min="1" 
                                        required>
                             </div>
                             <div class="col-span-2">
                                 <input type="text" 
-                                       class="unit-price w-full bg-gray-50 border rounded-md px-3 py-2 text-sm text-center" 
+                                       class="unit-price w-full bg-blue-50 border rounded-md px-3 py-2 text-sm text-center" 
                                        placeholder="Price"
                                        readonly>
                             </div>
                             <div class="col-span-2">
                                 <input type="text" 
-                                       class="subtotal w-full bg-gray-50 border rounded-md px-3 py-2 text-sm text-center font-medium" 
+                                       class="subtotal w-full bg-blue-50 border rounded-md px-3 py-2 text-sm text-center font-medium" 
                                        placeholder="Subtotal"
                                        readonly>
                             </div>
                             <div class="col-span-1 text-right">
-                                <button type="button" class="remove-product text-gray-400 hover:text-red-500 transition-colors">
+                                <button type="button" class="remove-product text-[#ff7403] hover:text-red-500 transition-colors">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
@@ -103,7 +115,7 @@
                 <!-- Add Product Button -->
                 <button type="button" 
                         id="addProduct" 
-                        class="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors">
+                        class="w-full py-2 border-2 border-dashed border-gray-400 rounded-lg text-blue-800 hover:text-blue-900 hover:border-blue-800 transition-colors">
                     + Add Product
                 </button>
 
@@ -111,9 +123,9 @@
                 <div class="bg-white rounded-lg border border-gray-200 p-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="text-sm text-gray-500 block mb-2">Payment Method</label>
+                            <label class="text-lg text-gray-600 block mb-2">Payment Method</label>
                             <select name="payment_method" 
-                                    class="w-full bg-gray-50 border-0 rounded-md focus:ring-2 focus:ring-indigo-500 text-sm" 
+                                    class="w-full bg-blue-50 border-0 rounded-md focus:ring-2 focus:ring-indigo-500 text-lg" 
                                     required>
                                 <option value="">Select payment method</option>
                                 <option value="cash">Cash</option>
@@ -121,10 +133,10 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-sm text-gray-500 block mb-2">Total Amount</label>
+                            <label class="text-lg text-gray-600 block mb-2">Total Amount</label>
                             <input type="text" 
                                    id="totalAmount" 
-                                   class="w-full bg-gray-50 border-0 rounded-md text-lg font-medium text-gray-900" 
+                                   class="w-full bg-blue-50 border-0 rounded-md text-lg font-medium text-gray-900" 
                                    readonly>
                         </div>
                     </div>
@@ -133,7 +145,7 @@
                 <!-- Submit Button -->
                 <div class="flex justify-end">
                     <button type="submit" 
-                            class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            class="bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-[#123d94] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                         Complete Sale
                     </button>
                 </div>
@@ -144,15 +156,15 @@
         <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
             <div class="bg-white rounded-lg shadow-lg max-w-sm w-full mx-4 transform transition-all">
                 <div class="p-6">
-                    <div class="w-12 h-12 rounded-full bg-green-100 mx-auto flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 rounded-full bg-orange-100 mx-auto flex items-center justify-center">
+                        <svg class="w-6 h-6 text-[#ff7403]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                     </div>
                     <h3 class="mt-4 text-center text-lg font-medium text-gray-900">Sale Complete</h3>
                     <p id="modalSaleId" class="mt-2 text-center text-sm text-gray-500"></p>
                     <button id="closeModal" 
-                            class="mt-6 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            class="mt-6 w-full bg-blue-700 text-white py-2 rounded-md hover:bg-[#123d94] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                         Continue
                     </button>
                 </div>
@@ -160,19 +172,20 @@
         </div>
 
         <!-- Receipt Modal -->
-        <div id="receiptModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
-            <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 transform transition-all">
+        <div id="receiptModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center overflow-y-auto">
+            <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 my-8 transform transition-all">
                 <div class="p-6">
                     <h3 class="text-center text-lg font-medium text-gray-900">Receipt</h3>
-                    <div id="receiptContent" class="mt-4 text-sm text-gray-700">
+                    <!-- Add a max-height and overflow to the receiptContent div -->
+                    <div id="receiptContent" class="mt-4 text-sm text-gray-700 max-h-[70vh] overflow-y-auto">
                         <!-- Receipt content will be inserted here -->
                     </div>
                     <button id="closeReceiptModal" 
-                            class="mt-6 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            class="mt-6 w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400 transition-colors">
                         Close
                     </button>
                     <button id="printReceipt" 
-                            class="mt-4 w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                            class="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-[#123d94] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-colors">
                         Print Receipt
                     </button>
                 </div>
