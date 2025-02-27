@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { isAuthenticated, isAdmin } = require('../middleware/auth');
 
-// Get reports page
-router.get('/', async (req, res) => {
+// Get reports page - restrict to admin only
+router.get('/', isAdmin, async (req, res) => {
     try {
         res.render('reports');
     } catch (error) {
@@ -12,8 +13,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get sales summary report
-router.get('/summary', async (req, res) => {
+// Get sales summary report - restrict to admin only
+router.get('/summary', isAdmin, async (req, res) => {
     try {
         const { startDate, endDate, period } = req.query;
         
@@ -85,7 +86,8 @@ router.get('/summary', async (req, res) => {
     }
 });
 
-router.get('/transactions', async (req, res) => {
+// Transactions report - restrict to admin only
+router.get('/transactions', isAdmin, async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
         
@@ -137,8 +139,9 @@ router.get('/transactions', async (req, res) => {
         });
     }
 });
-// Add this new route
-router.get('/products', async (req, res) => {
+
+// Products report - restrict to admin only
+router.get('/products', isAdmin, async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
         
@@ -184,4 +187,5 @@ router.get('/products', async (req, res) => {
         });
     }
 });
+
 module.exports = router;
