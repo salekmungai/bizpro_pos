@@ -2,13 +2,44 @@
 <html>
 <head>
     <title>BizPro POS - Dashboard</title>
-    <link href="/css/styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .menu-card {
             transition: transform 0.2s;
         }
         .menu-card:hover {
             transform: translateY(-5px);
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 400px;
+            height: 100%;
+            background-color: white;
+            transition: right 0.3s ease-in-out;
+            z-index: 1001;
+            overflow-y: auto;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .modal-content.open {
+            right: 0;
+        }
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -20,17 +51,16 @@
                 <img src="/images/logo2-cropped.svg" alt="BizPro POS" class="h-20">
             </div>
             <div class="flex items-center space-x-4">
-            
-                
-<div class="relative w-10 h-10 overflow-hidden bg-gray-100 rounded-full dark:bg-gray-600">
-    
-    <svg class="absolute w-12 h-12 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
-</div>
-
+                <div class="relative w-10 h-10 overflow-hidden bg-gray-100 rounded-full dark:bg-gray-600">
+                    <svg class="absolute w-12 h-12 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                </div>
                 <span class="text-gray-700"> <%= user.name %></span>
-                <a href="/auth/logout" class="text-red-600 hover:text-red-800">Logout</a>
+                
                 <button onclick="openSettingsModal()" class="text-gray-600 hover:text-gray-900">
-                    Settings
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -74,107 +104,131 @@
             </a>
 
             <!-- Reports -->
+            <% if (user && user.role === 'admin') { %>
             <a href="/reports" class="block">
                 <div class="bg-red-500 text-white rounded-lg p-6 text-center menu-card">
                     <h2 class="text-xl font-semibold mb-2">Reports</h2>
                     <p class="text-red-100">View sales reports and analytics</p>
                 </div>
             </a>
+            <% } %>
 
             <!-- Settings -->
-            <a href="/settings" class="block">
+            <button onclick="openSettingsModal()" class="block">
+                
                 <div class="bg-gray-600 text-white rounded-lg p-6 text-center menu-card">
                     <h2 class="text-xl font-semibold mb-2">Settings</h2>
                     <p class="text-gray-300">Configure system settings</p>
                 </div>
-            </a>
+            </button>
         </div>
     </main>
-    <!-- settings-modal.ejs -->
-    <div id="settingsModal" class="hidden fixed inset-0 bg-gray-400 flex items-center justify-center z-50">
 
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        <!-- Modal Header -->
-        <div class="border-b px-6 py-4">
-            <div class="flex items-center justify-between">
-                <h3 class="text-xl font-semibold text-gray-900">Settings</h3>
-                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-500">
+    <!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModalOverlay">
+    <div class="modal-content" id="settingsModal">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-blue-800">Settings</h2>
+                <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-700">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
+
+<!-- Business Profile Section -->
+<% if (user && user.role === 'admin') { %>
+<div class="mb-8">
+    <div class="flex justify-between items-center bg-blue-50 p-4 rounded-lg cursor-pointer" onclick="toggleSection('business')">
+        <h3 class="font-medium text-gray-700">Business Profile</h3>
+        <svg id="businessArrow" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </div>
+    <form id="businessForm" action="/settings/update-business" method="POST" class="hidden mt-4 space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-600">Business Name</label>
+            <input type="text" name="businessName" value="<%= business ? business.businessName : '' %>"
+                class="w-full px-3 py-2 border rounded-lg mt-1">
         </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600">Business Address</label>
+            <input type="text" name="businessAddress" value="<%= business ? business.businessAddress : '' %>"
+                class="w-full px-3 py-2 border rounded-lg mt-1">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600">Business Telephone</label>
+            <input type="text" name="businessTelephone" value="<%= business ? business.businessTelephone : '' %>"
+                class="w-full px-3 py-2 border rounded-lg mt-1">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600">Business Email</label>
+            <input type="email" name="businessEmail" value="<%= business ? business.businessEmail : '' %>"
+                class="w-full px-3 py-2 border rounded-lg mt-1">
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+            Update Business
+        </button>
+    </form>
+</div>
+<% } %>
 
-        <!-- Modal Content -->
-        <div class="px-6 py-4">
-            <!-- Change Password Form -->
-            <form action="/settings/change-password" method="POST" class="space-y-4">
-                <div>
-                    <label for="currentPassword" class="block text-sm font-medium text-gray-700">Current Password</label>
-                    <input type="password" id="currentPassword" name="currentPassword" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <!-- Change Password Section -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center bg-blue-50 p-4 rounded-lg cursor-pointer" onclick="toggleSection('password')">
+                    <h3 class="font-medium text-gray-700">Change Password</h3>
+                    <svg id="passwordArrow" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </div>
-
-                <div>
-                    <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
-                    <input type="password" id="newPassword" name="newPassword" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-
-                <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Change Password
-                </button>
-            </form>
-
-            <!-- Other Settings Options -->
-            <div class="mt-6 pt-6 border-t">
-                <h4 class="text-lg font-medium text-gray-900 mb-4">Other Options</h4>
-                
-                <!-- Logout Button -->
-                <form action="/logout" method="POST">
-                    <button type="submit"
-                        class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-                        Logout
+                <form id="passwordForm" action="/settings/change-password" method="POST" class="hidden mt-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Current Password</label>
+                        <input type="password" name="currentPassword" 
+                            class="w-full px-3 py-2 border rounded-lg mt-1" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">New Password</label>
+                        <input type="password" name="newPassword" 
+                            class="w-full px-3 py-2 border rounded-lg mt-1" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Confirm Password</label>
+                        <input type="password" name="confirmPassword" 
+                            class="w-full px-3 py-2 border rounded-lg mt-1" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                        Change Password
                     </button>
                 </form>
             </div>
+
+            <!-- Logout Section -->
+            <div class="border-t pt-4">
+                <a href="/auth/logout" class="w-full block text-center bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                    Logout
+                </a>
+            </div>
+            
         </div>
     </div>
 </div>
 
-<script>
-function openSettingsModal() {
-    document.getElementById('settingsModal').classList.remove('hidden');
-}
 
-function closeSettingsModal() {
-    document.getElementById('settingsModal').classList.add('hidden');
-}
+<!-- Footer -->
+<footer class="fixed bottom-0 w-full bg-white border-t">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between text-sm text-gray-600">
+        <span>Terminal 1</span>
+        <span class="text-green-500">Connected to Server</span>
+        <span id="time"></span>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 py-2 flex justify-between text-sm text-gray-600">
+        &copy; 2025 Bizpro Systems. All rights reserved.
+        <span>email: info@bizpro.com</span>
+    </div>
+</footer>
 
-// Close modal when clicking outside
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeSettingsModal();
-    }
-});
-</script>
-
-    <!-- Footer -->
-    <footer class="fixed bottom-0 w-full bg-white border-t">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between text-sm text-gray-600">
-            <span>Terminal 1</span>
-            <span class="text-green-500">Connected to Server</span>
-            <span id="time"></span>
-        </div>
-    </footer>
     <script>
         // JavaScript to update the real-time clock
         function updateClock() {
@@ -192,6 +246,121 @@ document.getElementById('settingsModal').addEventListener('click', function(e) {
         // Call the function every second
         setInterval(updateClock, 1000);
         updateClock(); // Initialize the clock immediately
+
+        // Settings Modal Functions
+        function openSettingsModal() {
+            document.getElementById('settingsModalOverlay').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('settingsModal').classList.add('open');
+            }, 10);
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('open');
+            setTimeout(() => {
+                document.getElementById('settingsModalOverlay').style.display = 'none';
+            }, 300);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('settingsModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSettingsModal();
+            }
+        });
+        function toggleSection(section) {
+        const businessForm = document.getElementById('businessForm');
+        const passwordForm = document.getElementById('passwordForm');
+        const businessArrow = document.getElementById('businessArrow');
+        const passwordArrow = document.getElementById('passwordArrow');
+
+        if (section === 'business') {
+            businessForm.classList.toggle('hidden');
+            businessArrow.classList.toggle('rotate-180');
+            passwordForm.classList.add('hidden');
+            passwordArrow.classList.remove('rotate-180');
+        } else {
+            passwordForm.classList.toggle('hidden');
+            passwordArrow.classList.toggle('rotate-180');
+            businessForm.classList.add('hidden');
+            businessArrow.classList.remove('rotate-180');
+        }
+    }
+
+    // Handle form submissions with AJAX
+    document.getElementById('businessForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch(e.target.action, {
+            method: 'POST',
+            body: new URLSearchParams(formData),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update UI with new data
+            document.querySelector('[name="businessName"]').value = result.business.businessName;
+            document.querySelector('[name="businessAddress"]').value = result.business.businessAddress;
+            document.querySelector('[name="businessTelephone"]').value = result.business.businessTelephone;
+            document.querySelector('[name="businessEmail"]').value = result.business.businessEmail;
+            
+            // Close modal and show success
+            alert(result.message);
+            closeSettingsModal();
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while updating business information');
+    }
+});
+// Change Password Form Handler
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    
+    try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Updating...';
+
+        const response = await fetch('/settings/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                currentPassword: formData.get('currentPassword'),
+                newPassword: formData.get('newPassword'),
+                confirmPassword: formData.get('confirmPassword')
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(result.message);
+            e.target.reset();
+            toggleSection('password');
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Request failed:', error);
+        alert('Network error - please try again');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Change Password';
+    }
+});
     </script>
 </body>
 </html>
