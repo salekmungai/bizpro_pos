@@ -78,9 +78,7 @@ app.get('/register', (req, res) => {
     res.render('register');
 });
 
-app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('dashboard', { user: req.user });
-});
+
 
 
 
@@ -90,6 +88,8 @@ app.use('/products', require('./routes/products'));
 app.use('/sales/new', require('./routes/sales'));
 app.use('/transactions', require('./routes/transactions'));
 app.use('/reports', reportsRouter);
+app.use('/settings', require('./routes/settings'));
+app.use('/dashboard', isAuthenticated, require('./routes/dashboard'));
 
 
 // Start server
